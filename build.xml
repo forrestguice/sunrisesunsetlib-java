@@ -16,14 +16,19 @@
  ~ limitations under the License.
 -->
 
-<project name="sunrisesunsetlib" basedir="." default="all">
+<project name="sunrisesunsetlib" basedir="." default="all" xmlns:ivy="antlib:org.apache.ivy.ant">
 
 	<property name="app-name" value="SunriseSunsetLib" />
 	<property name="build-dir" value="build" />
+        <property name="lib-dir" value="lib" />
 	<property name="dist-dir" value="dist" />
 	<property name="src-dir" value="src" />
-	<property name="test-dir" value="test" />
+	<property name="test-dir" value="src/test/java" />
 	<property name="docs-dir" value="docs" />
+
+        <path id="lib-dir.path">
+                <fileset dir="${lib-dir}" />
+	</path>
 
 	<target name="all" description="Compiles, packages, unit test and generate javadoc">
 		<antcall target="clean" />
@@ -32,14 +37,22 @@
 		<antcall target="unittest" />
 		<antcall target="javadoc" />
 	</target>
+	 
+        <target name="resolve-deps" description="Retrieve dependencies (apache-ivy).">
+                <ivy:retrieve/>
+        </target>    
+
+        <target name="report-deps" depends="resolve-deps" description="Generates a report of dependencies (apache-ivy).">
+                <ivy:report todir="${build-dir}"/>
+        </target>
 
 	<target name="compile" description="Cleanly compiles the sunrisesunset lib.">
 		<antcall target="cleanbuilddir" />
 		<mkdir dir="${build-dir}/test" />
-		<javac srcdir="${src-dir}" destdir="${build-dir}" fork="true" />
+		<javac srcdir="${src-dir}" destdir="${build-dir}" classpathref="lib-dir.path" includeAntRuntime="false" fork="true" />
 	</target>
 
-	<target name="package" description="Packages the compiled code into a jar file.">
+	<target name="package" depends="compile" description="Packages the compiled code into a jar file.">
 		<jar destfile="${dist-dir}/SunriseSunsetLib-bin.jar">
 			<fileset dir="${build-dir}" includes="**/*.class"/>
 			<fileset dir="." includes="LICENSE"/>
@@ -47,7 +60,7 @@
 		      <attribute name="Built-By" value="${user.name}"/>
 		      <attribute name="Implementation-Vendor" value="LuckyCatLabs"/>
 		      <attribute name="Implementation-Title" value="SunriseSunsetCalculatorLib"/>
-		      <attribute name="Implementation-Version" value="1.0"/>
+		      <attribute name="Implementation-Version" value="1.3-SNAPSHOT"/>
 		    </manifest>
 		</jar>
 		
@@ -58,15 +71,15 @@
 		      <attribute name="Built-By" value="${user.name}"/>
 		      <attribute name="Implementation-Vendor" value="LuckyCatLabs"/>
 		      <attribute name="Implementation-Title" value="SunriseSunsetCalculatorLib"/>
-		      <attribute name="Implementation-Version" value="1.0"/>				
+		      <attribute name="Implementation-Version" value="1.3-SNAPSHOT"/>				
 			</manifest>
 		</jar>
 	</target>
 
-	<target name="unittest" description="Run the JUnit tests.">
+	<target name="unittest" depends="package" description="Run the JUnit tests.">
 		<path id="test.class.path">
 			<pathelement path="${dist-dir}/SunriseSunsetLib-bin.jar" />
-			<pathelement path="lib/junit-4.3.1.jar" />
+			<pathelement path="${lib-dir}/junit-4.5.jar" />
 		</path>
 		<javac srcdir="${test-dir}" destdir="${build-dir}/test" classpathref="test.class.path" />
 		<jar destfile="${dist-dir}/SunriseSunsetLibTest.jar" basedir="${build-dir}/test/" />
@@ -74,8 +87,8 @@
 		<junit printsummary="withOutAndErr" showoutput="yes" haltonfailure="yes" fork="true" forkmode="once">
 			<classpath>
 				<pathelement location="${dist-dir}/SunriseSunsetLib-bin.jar" />
-				<pathelement location="lib/junit-4.3.1.jar" />
 				<pathelement location="${dist-dir}/SunriseSunsetLibTest.jar" />
+                                <fileset dir="${lib-dir}" />
 			</classpath>
 
 			<batchtest todir=".">
@@ -100,7 +113,7 @@
 			version="true"
 			windowtitle="LuckyCatLabs - Sunrise Sunset Lib API">
 			
-			<fileset dir="${src-dir}" defaultexcludes="yes">
+			<fileset dir="${src-dir}/main/java" defaultexcludes="yes">
 				<include name="com/luckycatlabs/sunrisesunset/**" />
 			</fileset>
 		</javadoc>
@@ -110,6 +123,17 @@
 		<antcall target="cleandistdir" />
 		<antcall target="cleanbuilddir" />
 	</target>
+
+	<target name="cleancache" description="Clean the dependency cache (apache-ivy).">
+		<ivy:cleancache />
+	</target>
+
+        <target name="clean-deps" description="Clean the libs directory (apache-ivy).">
+		<mkdir dir="${lib-dir}" />
+		<delete includeemptydirs="true" failonerror="false">
+			<fileset dir="${lib-dir}" includes="*.jar" />
+		</delete>
+        </target>
 
 	<target name="cleandistdir">
 		<mkdir dir="${dist-dir}" />
