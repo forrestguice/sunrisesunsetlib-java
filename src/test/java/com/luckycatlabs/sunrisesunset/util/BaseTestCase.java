@@ -37,11 +37,15 @@ public class BaseTestCase {
     }
 
     public void setup(int month, int day, int year, String longitude, String latitude, String timeZoneIdentifier) {
+	this.setup(month, day, year, longitude, latitude, TimeZone.getTimeZone(timeZoneIdentifier));
+    }
+
+    public void setup(int month, int day, int year, String longitude, String latitude, TimeZone timeZone) {
         eventDate = Calendar.getInstance();
         eventDate.set(Calendar.YEAR, year);
         eventDate.set(Calendar.MONTH, month);
         eventDate.set(Calendar.DAY_OF_MONTH, day);
-        eventDate.setTimeZone(TimeZone.getTimeZone(timeZoneIdentifier));
+        eventDate.setTimeZone(timeZone);
         location = new Location(longitude, latitude);
     }
 
